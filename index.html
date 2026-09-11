@@ -19,6 +19,16 @@
             --muji-red: #7f0019;
         }
         * { box-sizing: border-box; }
+        
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
         body {
             margin: 0;
             padding: 0;
@@ -332,6 +342,7 @@
 </head>
 <body>
 
+<canvas id="bg-canvas"></canvas>
 <div class="container">
     <!-- Level Selection Screen -->
     <div id="level-screen" class="screen active">
@@ -380,6 +391,7 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
     let vocabulary = [];
     // progress storage format: { 'apple': { memorized: true }, 'banana': { hard: true } }
@@ -611,6 +623,97 @@
 
     // Init
     loadData();
+
+    // ==========================================
+    // Three.js Background Animation
+    // ==========================================
+    function initThreeJS() {
+        // Condition 4: Stop animation if "prefers-reduced-motion" is active
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const canvas = document.getElementById('bg-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 50;
+
+        // Condition 3: Reduce particle count on mobile
+        const isMobile = window.innerWidth < 768;
+        const particleCount = isMobile ? 150 : 600;
+
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const velocities = [];
+
+        for (let i = 0; i < particleCount * 3; i += 3) {
+            positions[i] = (Math.random() - 0.5) * 200;
+            positions[i + 1] = (Math.random() - 0.5) * 200;
+            positions[i + 2] = (Math.random() - 0.5) * 100;
+
+            velocities.push({
+                x: (Math.random() - 0.5) * 0.05,
+                y: (Math.random() - 0.5) * 0.05,
+                z: (Math.random() - 0.5) * 0.05
+            });
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const material = new THREE.PointsMaterial({
+            color: 0xb8997a, // Matches Muji wood tone
+            size: isMobile ? 1.5 : 1.2,
+            transparent: true,
+            opacity: 0.3,
+            sizeAttenuation: true
+        });
+
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+
+        function animate() {
+            if (prefersReducedMotion) return;
+            requestAnimationFrame(animate);
+
+            const positionsAttribute = geometry.getAttribute('position');
+            for (let i = 0; i < particleCount; i++) {
+                let x = positionsAttribute.getX(i);
+                let y = positionsAttribute.getY(i);
+                let z = positionsAttribute.getZ(i);
+                
+                const vel = velocities[i];
+                x += vel.x;
+                y += vel.y;
+                z += vel.z;
+
+                if (x < -100 || x > 100) vel.x *= -1;
+                if (y < -100 || y > 100) vel.y *= -1;
+                if (z < -50 || z > 50) vel.z *= -1;
+
+                positionsAttribute.setXYZ(i, x, y, z);
+            }
+            positionsAttribute.needsUpdate = true;
+
+            particles.rotation.x += 0.0002;
+            particles.rotation.y += 0.0003;
+
+            renderer.render(scene, camera);
+        }
+        
+        renderer.render(scene, camera); // Initial render
+        if (!prefersReducedMotion) animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            if (prefersReducedMotion) renderer.render(scene, camera);
+        });
+    }
+
+    initThreeJS();
 </script>
 </body>
 </html>
