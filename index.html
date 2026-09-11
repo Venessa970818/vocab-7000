@@ -7,34 +7,100 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #f9f8f6;
-            --text-main: #3e3a39;
-            --text-muted: #8e877f;
-            --border-color: #e0dcd3;
-            --accent: #b8997a;
-            --accent-hover: #9e8267;
-            --card-bg: #ffffff;
-            --danger: #c45b5b;
-            --success: #6b8e6b;
-            --muji-red: #7f0019;
+            /* 1. 顏色 (核心四色與介面用色) */
+            --color-primary: #7f0019;    /* 主色 (無印紅) */
+            --color-secondary: #b8997a;  /* 輔色 (木質調) */
+            --color-bg: #f9f8f6;         /* 背景色 */
+            --color-text: #3e3a39;       /* 文字色 */
+            
+            --color-card-bg: rgba(255, 255, 255, 0.65);
+            --color-card-hover: rgba(255, 255, 255, 0.85);
+            --color-border: rgba(224, 220, 211, 0.6);
+            
+            /* 2. 字級 (4 級) */
+            --text-sm: 14px;
+            --text-base: 16px;
+            --text-lg: 24px;
+            --text-xl: 40px;
+            
+            /* 3. 圓角 (2 種) */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            
+            /* 4. 陰影 (2 種) */
+            --shadow-glass-1: 0 8px 32px rgba(0,0,0,0.06);
+            --shadow-glass-2: 0 1px 2px rgba(255,255,255,0.4) inset, 0 -1px 2px rgba(0,0,0,0.02) inset;
+            
+            /* 5. 間距 (4 的倍數) */
+            --space-0: 0;
+            --space-4: 4px;
+            --space-8: 8px;
+            --space-12: 12px;
+            --space-16: 16px;
+            --space-20: 20px;
+            --space-24: 24px;
+            --space-32: 32px;
+            --space-40: 40px;
+            --space-48: 48px;
+            --space-320: 320px;
+            
+            /* 其他共用尺寸 */
+            --border-width: 1px;
+            --letter-spacing-sm: 1px;
+            --letter-spacing-md: 2px;
+            --opacity-muted: 0.6;
         }
+
         * { box-sizing: border-box; }
         
+        /* 1. 極淡雜訊質感 (SVG Filter via CSS) */
+        body::after {
+            content: "";
+            position: fixed;
+            top: var(--space-0); left: var(--space-0); width: 100vw; height: 100vh;
+            z-index: 9999;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+        }
+
+        /* 2. 模糊漸層光暈 + 4. 視差滾動效果 */
+        .glow-bg {
+            position: fixed; /* Desktop parallax: fixed behind scrolling content */
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw; height: 80vw;
+            max-width: 600px; max-height: 600px;
+            background: radial-gradient(circle, var(--color-secondary) 0%, transparent 60%);
+            opacity: 0.15;
+            filter: blur(60px);
+            z-index: -1;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 768px) {
+            .glow-bg {
+                /* 手機關閉視差：改成 absolute 跟著滾動 */
+                position: absolute;
+                top: 200px;
+            }
+        }
+
         #bg-canvas {
             position: fixed;
-            top: 0;
-            left: 0;
+            top: var(--space-0);
+            left: var(--space-0);
             width: 100vw;
             height: 100vh;
-            z-index: -1;
+            z-index: -2;
             pointer-events: none;
         }
         body {
-            margin: 0;
-            padding: 0;
+            margin: var(--space-0);
+            padding: var(--space-0);
             font-family: 'Noto Sans TC', sans-serif;
-            background: var(--bg-main);
-            color: var(--text-main);
+            background: var(--color-bg);
+            color: var(--color-text);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -46,128 +112,124 @@
             width: 90%;
             max-width: 500px;
             text-align: center;
-            margin: 40px 0;
+            margin: var(--space-40) var(--space-0);
         }
         h1 {
             font-weight: 700;
-            font-size: 2rem;
-            margin-bottom: 5px;
-            color: var(--muji-red);
-            letter-spacing: 2px;
+            font-size: var(--text-xl);
+            margin-bottom: var(--space-4);
+            color: var(--color-primary);
+            letter-spacing: var(--letter-spacing-md);
         }
         .subtitle {
-            color: var(--text-muted);
-            margin-bottom: 40px;
-            font-size: 0.95rem;
+            opacity: var(--opacity-muted);
+            margin-bottom: var(--space-40);
+            font-size: var(--text-sm);
             font-weight: 300;
-            letter-spacing: 1px;
+            letter-spacing: var(--letter-spacing-sm);
         }
         
         .screen {
             display: none;
             width: 100%;
-            animation: fadeIn 0.4s ease;
         }
         .screen.active {
             display: block;
         }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         /* Loading */
         #loading {
-            font-size: 1.1rem;
-            color: var(--text-muted);
-            margin: 50px 0;
+            font-size: var(--text-base);
+            opacity: var(--opacity-muted);
+            margin: var(--space-48) var(--space-0);
         }
 
         /* Level Selection */
         .level-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 15px;
+            gap: var(--space-16);
         }
         
-        /* Level Card (New structure for Hard mode) */
+        /* Level Card */
         .level-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            background: var(--color-card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-glass-1), var(--shadow-glass-2);
             overflow: hidden;
             text-align: left;
         }
         .level-main {
-            padding: 18px 24px;
+            padding: var(--space-20) var(--space-24);
             cursor: pointer;
             transition: background 0.2s ease;
         }
         .level-main:hover {
-            background: #fdfdfc;
+            background: var(--color-card-hover);
         }
         .level-main.completed {
-            background: #fcfdfc;
+            background: var(--color-card-hover);
         }
         .level-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 1.1rem;
+            font-size: var(--text-base);
             font-weight: 500;
-            color: var(--text-main);
+            color: var(--color-text);
         }
         .progress-text {
-            font-size: 0.85rem;
-            color: var(--text-muted);
+            font-size: var(--text-sm);
+            opacity: var(--opacity-muted);
             font-weight: 400;
         }
         .progress-bar-bg {
-            background: #f0eee9;
-            height: 3px;
-            border-radius: 2px;
-            margin-top: 12px;
+            background: var(--color-border);
+            height: var(--space-4);
+            border-radius: var(--radius-sm);
+            margin-top: var(--space-12);
             overflow: hidden;
         }
         .progress-bar-fill {
             height: 100%;
-            background: var(--accent);
+            background: var(--color-secondary);
             width: 0%;
             transition: width 0.5s ease;
         }
         .level-main.completed .progress-bar-fill {
-            background: var(--success);
+            background: var(--color-secondary);
         }
         
         .level-hard {
-            border-top: 1px dashed var(--border-color);
-            background: #faf8f5;
-            padding: 14px 24px;
+            border-top: var(--border-width) dashed var(--color-border);
+            background: var(--color-bg);
+            padding: var(--space-16) var(--space-24);
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: opacity 0.2s;
         }
         .level-hard:hover {
-            background: #f5f2eb;
+            opacity: 0.8;
         }
         .hard-text {
-            font-size: 0.95rem;
-            color: var(--danger);
+            font-size: var(--text-sm);
+            color: var(--color-primary);
             font-weight: 500;
         }
         .btn-small {
-            background: white;
-            border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            font-size: 0.85rem;
-            border-radius: 4px;
-            color: var(--text-main);
+            background: var(--color-card-bg);
+            border: var(--border-width) solid var(--color-border);
+            padding: var(--space-8) var(--space-12);
+            font-size: var(--text-sm);
+            border-radius: var(--radius-sm);
+            color: var(--color-text);
             cursor: pointer;
-            pointer-events: none; /* Let parent handle click */
+            pointer-events: none;
         }
 
         /* Top Bar */
@@ -175,25 +237,26 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
+            margin-bottom: var(--space-24);
         }
         .btn-icon {
             background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            font-size: 0.85rem;
+            border: var(--border-width) solid var(--color-border);
+            color: var(--color-text);
+            opacity: 0.7;
+            font-size: var(--text-sm);
             cursor: pointer;
-            padding: 6px 12px;
-            border-radius: 4px;
+            padding: var(--space-8) var(--space-12);
+            border-radius: var(--radius-sm);
             transition: all 0.2s;
         }
         .btn-icon:hover {
-            background: #f0eee9;
-            color: var(--text-main);
+            background: var(--color-border);
+            opacity: 1;
         }
         .session-progress {
-            font-size: 0.9rem;
-            color: var(--accent);
+            font-size: var(--text-sm);
+            color: var(--color-secondary);
             font-weight: 500;
         }
 
@@ -201,8 +264,8 @@
         .card-container {
             perspective: 1000px;
             width: 100%;
-            height: 320px;
-            margin: 0 auto 30px auto;
+            height: var(--space-320);
+            margin: var(--space-0) auto var(--space-32) auto;
             cursor: pointer;
         }
         .card {
@@ -225,24 +288,26 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            border-radius: 6px;
-            padding: 30px;
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border-radius: var(--radius-md);
+            padding: var(--space-32);
+            background: var(--color-card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: var(--border-width) solid var(--color-border);
+            box-shadow: var(--shadow-glass-1), var(--shadow-glass-2);
             overflow-y: auto;
         }
         .card-back {
             transform: rotateY(180deg);
-            background: #faf9f7;
+            background: var(--color-bg);
             align-items: flex-start;
             justify-content: flex-start;
         }
         .word-en {
-            font-size: 3rem;
+            font-size: var(--text-xl);
             font-weight: 700;
-            margin-bottom: 15px;
-            color: var(--text-main);
+            margin-bottom: var(--space-16);
+            color: var(--color-text);
             word-wrap: break-word;
             text-align: center;
             width: 100%;
@@ -257,21 +322,21 @@
             text-align: center;
         }
         .word-zh {
-            font-size: 1.6rem;
+            font-size: var(--text-lg);
             font-weight: 500;
-            color: var(--text-main);
-            margin-bottom: 10px;
+            color: var(--color-text);
+            margin-bottom: var(--space-8);
         }
         .word-pos {
-            font-size: 1rem;
-            color: var(--text-muted);
-            margin-bottom: 5px;
+            font-size: var(--text-sm);
+            opacity: var(--opacity-muted);
+            margin-bottom: var(--space-4);
         }
         .hint-text {
             position: absolute;
-            bottom: 20px;
-            font-size: 0.85rem;
-            color: var(--text-muted);
+            bottom: var(--space-20);
+            font-size: var(--text-sm);
+            opacity: 0.5;
             font-weight: 400;
             left: 50%;
             transform: translateX(-50%);
@@ -280,69 +345,69 @@
         /* Actions */
         .actions {
             display: flex;
-            gap: 15px;
+            gap: var(--space-16);
             justify-content: center;
             opacity: 0;
             pointer-events: none;
             transition: all 0.3s ease;
-            transform: translateY(10px);
+            transform: translateY(var(--space-12));
         }
         .actions.show {
             opacity: 1;
             pointer-events: auto;
-            transform: translateY(0);
+            transform: translateY(var(--space-0));
         }
         .btn-action {
             flex: 1;
-            padding: 14px;
-            border: 1px solid transparent;
-            border-radius: 4px;
-            font-size: 1rem;
+            padding: var(--space-16);
+            border: var(--border-width) solid transparent;
+            border-radius: var(--radius-sm);
+            font-size: var(--text-base);
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
-            letter-spacing: 1px;
+            transition: opacity 0.2s;
+            letter-spacing: var(--letter-spacing-sm);
         }
         .btn-danger {
-            background: #fdf6f6;
-            color: var(--danger);
-            border-color: #f7e1e1;
+            background: var(--color-primary);
+            color: var(--color-card-bg);
         }
-        .btn-danger:hover { background: #faeded; border-color: #f2cece; }
+        .btn-danger:hover { opacity: 0.8; }
+        
         .btn-success {
-            background: #f5f9f5;
-            color: var(--success);
-            border-color: #e3ede3;
+            background: var(--color-secondary);
+            color: var(--color-card-bg);
         }
-        .btn-success:hover { background: #ebf4eb; border-color: #d1e3d1; }
+        .btn-success:hover { opacity: 0.8; }
 
         .complete-msg {
-            font-size: 1.2rem;
-            margin-bottom: 25px;
-            color: var(--text-main);
+            font-size: var(--text-lg);
+            margin-bottom: var(--space-24);
+            color: var(--color-text);
             line-height: 1.6;
         }
         
         .box {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 40px 20px;
+            background: var(--color-card-bg);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--space-40) var(--space-20);
         }
         
         /* Custom scrollbar */
         .card-back::-webkit-scrollbar {
-            width: 6px;
+            width: var(--space-8);
         }
         .card-back::-webkit-scrollbar-thumb {
-            background-color: #dcd7cf;
-            border-radius: 3px;
+            background-color: var(--color-border);
+            border-radius: var(--radius-sm);
         }
     </style>
 </head>
 <body>
 
 <canvas id="bg-canvas"></canvas>
+<div class="glow-bg"></div>
 <div class="container">
     <!-- Level Selection Screen -->
     <div id="level-screen" class="screen active">
@@ -392,6 +457,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <script>
     let vocabulary = [];
     // progress storage format: { 'apple': { memorized: true }, 'banana': { hard: true } }
@@ -401,6 +467,8 @@
     let currentWord = null;
     let isAnimating = false;
     let dataLoaded = false;
+    let hasAnimatedTitle = false;
+    let hasAnimatedLevels = false;
 
     // Load 7000 words from JSONs
     async function loadData() {
@@ -497,7 +565,35 @@
                 card.appendChild(hardBtn);
             }
             
+            
             grid.appendChild(card);
+        }
+
+        // Animate title and level cards only once
+        if (typeof gsap !== 'undefined' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            if (!hasAnimatedTitle) {
+                gsap.from("#level-screen h1, #level-screen .subtitle, #level-screen .top-bar, #loading", {
+                    opacity: 0,
+                    y: 20,
+                    duration: 0.5,
+                    stagger: 0.08,
+                    ease: "power2.out",
+                    clearProps: "all"
+                });
+                hasAnimatedTitle = true;
+            }
+            if (!hasAnimatedLevels && grid.children.length > 0) {
+                gsap.from(grid.children, {
+                    opacity: 0,
+                    y: 20,
+                    duration: 0.5,
+                    stagger: 0.08,
+                    ease: "power2.out",
+                    clearProps: "all",
+                    delay: 0.2 // slightly after title
+                });
+                hasAnimatedLevels = true;
+            }
         }
     }
 
@@ -531,6 +627,17 @@
         
         switchScreen('card-screen');
         showNextWord();
+        
+        if (typeof gsap !== 'undefined' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            gsap.from("#card-screen .top-bar, .card-container", {
+                opacity: 0,
+                y: 20,
+                duration: 0.5,
+                stagger: 0.08,
+                ease: "power2.out",
+                clearProps: "all"
+            });
+        }
     }
 
     function showNextWord() {
