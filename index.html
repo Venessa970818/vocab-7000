@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7000單字 - 無印風</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #f9f8f6;
+            --text-main: #3e3a39;
+            --text-muted: #8e877f;
+            --border-color: #e0dcd3;
+            --accent: #b8997a;
+            --accent-hover: #9e8267;
+            --card-bg: #ffffff;
+            --danger: #c45b5b;
+            --success: #6b8e6b;
+            --muji-red: #7f0019;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+        .container {
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            margin: 40px 0;
+        }
+        h1 {
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 5px;
+            color: var(--muji-red);
+            letter-spacing: 2px;
+        }
+        .subtitle {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            font-size: 0.95rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        
+        .screen {
+            display: none;
+            width: 100%;
+            animation: fadeIn 0.4s ease;
+        }
+        .screen.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading */
+        #loading {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin: 50px 0;
+        }
+
+        /* Level Selection */
+        .level-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        /* Level Card (New structure for Hard mode) */
+        .level-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            overflow: hidden;
+            text-align: left;
+        }
+        .level-main {
+            padding: 18px 24px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .level-main:hover {
+            background: #fdfdfc;
+        }
+        .level-main.completed {
+            background: #fcfdfc;
+        }
+        .level-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+        .progress-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        .progress-bar-bg {
+            background: #f0eee9;
+            height: 3px;
+            border-radius: 2px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .level-main.completed .progress-bar-fill {
+            background: var(--success);
+        }
+        
+        .level-hard {
+            border-top: 1px dashed var(--border-color);
+            background: #faf8f5;
+            padding: 14px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .level-hard:hover {
+            background: #f5f2eb;
+        }
+        .hard-text {
+            font-size: 0.95rem;
+            color: var(--danger);
+            font-weight: 500;
+        }
+        .btn-small {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            color: var(--text-main);
+            cursor: pointer;
+            pointer-events: none; /* Let parent handle click */
+        }
+
+        /* Top Bar */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .btn-icon {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .btn-icon:hover {
+            background: #f0eee9;
+            color: var(--text-main);
+        }
+        .session-progress {
+            font-size: 0.9rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        /* Card 3D Flip */
+        .card-container {
+            perspective: 1000px;
+            width: 100%;
+            height: 320px;
+            margin: 0 auto 30px auto;
+            cursor: pointer;
+        }
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            padding: 30px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            overflow-y: auto;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+            background: #faf9f7;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+        .word-en {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--text-main);
+            word-wrap: break-word;
+            text-align: center;
+            width: 100%;
+        }
+        .word-zh-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .word-zh {
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: var(--text-main);
+            margin-bottom: 10px;
+        }
+        .word-pos {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+        .hint-text {
+            position: absolute;
+            bottom: 20px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Actions */
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            transform: translateY(10px);
+        }
+        .actions.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+        .btn-action {
+            flex: 1;
+            padding: 14px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 1px;
+        }
+        .btn-danger {
+            background: #fdf6f6;
+            color: var(--danger);
+            border-color: #f7e1e1;
+        }
+        .btn-danger:hover { background: #faeded; border-color: #f2cece; }
+        .btn-success {
+            background: #f5f9f5;
+            color: var(--success);
+            border-color: #e3ede3;
+        }
+        .btn-success:hover { background: #ebf4eb; border-color: #d1e3d1; }
+
+        .complete-msg {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+        
+        .box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 40px 20px;
+        }
+        
+        /* Custom scrollbar */
+        .card-back::-webkit-scrollbar {
+            width: 6px;
+        }
+        .card-back::-webkit-scrollbar-thumb {
+            background-color: #dcd7cf;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Level Selection Screen -->
+    <div id="level-screen" class="screen active">
+        <h1>單字本</h1>
+        <div class="subtitle">高中 7000 詞彙</div>
+        
+        <div class="top-bar" style="justify-content: flex-end;">
+            <button class="btn-icon" onclick="resetAllProgress()">清除記錄</button>
+        </div>
+
+        <div id="loading">正在從雲端載入 7000 詞彙資料中...</div>
+        <div class="level-grid" id="level-grid" style="display: none;">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+
+    <!-- Flashcard Screen -->
+    <div id="card-screen" class="screen">
+        <div class="top-bar">
+            <button class="btn-icon" onclick="goHome()">回首頁</button>
+            <div class="session-progress" id="session-progress">剩餘 0 字</div>
+        </div>
+
+        <div class="card-container" onclick="flipCard()">
+            <div class="card" id="flashcard">
+                <div class="card-face card-front">
+                    <div class="word-en" id="word-en">Word</div>
+                    <div class="hint-text">點擊翻轉</div>
+                </div>
+                <div class="card-face card-back" id="card-back-content">
+                    <div class="word-zh-container" id="word-zh-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions" id="actions">
+            <button class="btn-action btn-danger" onclick="handleAnswer(false)">不熟</button>
+            <button class="btn-action btn-success" onclick="handleAnswer(true)">記得</button>
+        </div>
+    </div>
+
+    <!-- Complete Screen -->
+    <div id="complete-screen" class="screen box">
+        <div class="complete-msg">本次複習單字已全數完成。<br>辛苦了！</div>
+        <button class="btn-action btn-icon" style="width: 100%; font-size: 1rem; padding: 12px; border: 1px solid var(--border-color); background: var(--bg-main);" onclick="goHome()">返回列表</button>
+    </div>
+</div>
+
+<script>
+    let vocabulary = [];
+    // progress storage format: { 'apple': { memorized: true }, 'banana': { hard: true } }
+    // if 'apple' was just `true` (legacy format), we treat it as { memorized: true }
+    let progress = JSON.parse(localStorage.getItem('vocab_progress_v2') || '{}');
+    let reviewQueue = [];
+    let currentWord = null;
+    let isAnimating = false;
+    let dataLoaded = false;
+
+    // Load 7000 words from JSONs
+    async function loadData() {
+        const baseUrl = 'https://raw.githubusercontent.com/AppPeterPan/TaiwanSchoolEnglishVocabulary/main/';
+        try {
+            const fetchPromises = [];
+            for (let i = 1; i <= 6; i++) {
+                fetchPromises.push(
+                    fetch(`${baseUrl}${i}%E7%B4%9A.json`)
+                        .then(res => res.json())
+                        .then(data => {
+                            data.forEach(item => {
+                                vocabulary.push({
+                                    id: item.word,
+                                    level: i,
+                                    en: item.word,
+                                    defs: item.definitions
+                                });
+                            });
+                        })
+                );
+            }
+            await Promise.all(fetchPromises);
+            dataLoaded = true;
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('level-grid').style.display = 'grid';
+            renderLevels();
+        } catch (error) {
+            document.getElementById('loading').innerText = '載入資料失敗，請檢查網路連線或嘗試重新整理。';
+            console.error('Failed to load vocabulary data:', error);
+        }
+    }
+
+    function saveProgress() {
+        localStorage.setItem('vocab_progress_v2', JSON.stringify(progress));
+    }
+
+    function getProgress(id) {
+        let p = progress[id];
+        if (p === true) return { memorized: true }; // handle legacy
+        return p || {};
+    }
+
+    function renderLevels() {
+        if (!dataLoaded) return;
+        const grid = document.getElementById('level-grid');
+        grid.innerHTML = '';
+        
+        for (let i = 1; i <= 6; i++) {
+            const levelWords = vocabulary.filter(w => w.level === i);
+            const total = levelWords.length;
+            if (total === 0) continue;
+            
+            let memorizedCount = 0;
+            let hardCount = 0;
+            
+            levelWords.forEach(w => {
+                const p = getProgress(w.id);
+                if (p.memorized) memorizedCount++;
+                else if (p.hard) hardCount++;
+            });
+            
+            const percent = total === 0 ? 0 : Math.round((memorizedCount / total) * 100);
+            
+            const card = document.createElement('div');
+            card.className = 'level-card';
+            
+            // Main New Words Section
+            const mainBtn = document.createElement('div');
+            mainBtn.className = `level-main ${percent === 100 ? 'completed' : ''}`;
+            mainBtn.onclick = () => startLevel(i, 'new');
+            
+            mainBtn.innerHTML = `
+                <div class="level-header">
+                    <span>Level ${i} (學習新字)</span>
+                    <span class="progress-text">${memorizedCount} / ${total} (${percent}%)</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: ${percent}%"></div>
+                </div>
+            `;
+            card.appendChild(mainBtn);
+            
+            // Hard Words Section
+            if (hardCount > 0) {
+                const hardBtn = document.createElement('div');
+                hardBtn.className = 'level-hard';
+                hardBtn.onclick = () => startLevel(i, 'hard');
+                
+                hardBtn.innerHTML = `
+                    <span class="hard-text">🔥 ${hardCount} 個不熟單字</span>
+                    <button class="btn-small">加強複習</button>
+                `;
+                card.appendChild(hardBtn);
+            }
+            
+            grid.appendChild(card);
+        }
+    }
+
+    function startLevel(level, mode) {
+        const levelWords = vocabulary.filter(w => w.level === level);
+        
+        let targetWords = [];
+        if (mode === 'hard') {
+            targetWords = levelWords.filter(w => {
+                return getProgress(w.id).hard === true;
+            });
+        } else {
+            // 'new' mode: words that are neither memorized nor marked as hard
+            targetWords = levelWords.filter(w => {
+                const p = getProgress(w.id);
+                return !p.memorized && !p.hard;
+            });
+        }
+        
+        if (targetWords.length === 0) {
+            if (mode === 'hard') {
+                alert('太棒了！目前這個等級沒有不熟的單字。');
+            } else {
+                alert(`Level ${level} 的新單字已經全部看完囉！請多加利用下方的「🔥 不熟單字」區來複習，或是點選右上角清除紀錄重新開始。`);
+            }
+            return;
+        }
+        
+        // Shuffle
+        reviewQueue = targetWords.sort(() => Math.random() - 0.5);
+        
+        switchScreen('card-screen');
+        showNextWord();
+    }
+
+    function showNextWord() {
+        if (reviewQueue.length === 0) {
+            switchScreen('complete-screen');
+            return;
+        }
+        
+        currentWord = reviewQueue[0];
+        document.getElementById('session-progress').innerText = `剩餘：${reviewQueue.length} 字`;
+        document.getElementById('word-en').innerText = currentWord.en;
+        
+        const zhContainer = document.getElementById('word-zh-container');
+        zhContainer.innerHTML = '';
+        
+        currentWord.defs.forEach(def => {
+            const wrapper = document.createElement('div');
+            wrapper.style.marginBottom = '15px';
+            
+            const pos = document.createElement('div');
+            pos.className = 'word-pos';
+            pos.innerText = def.partOfSpeech ? def.partOfSpeech + '.' : '';
+            
+            const text = document.createElement('div');
+            text.className = 'word-zh';
+            text.innerText = def.text;
+            
+            wrapper.appendChild(pos);
+            wrapper.appendChild(text);
+            zhContainer.appendChild(wrapper);
+        });
+    }
+
+    function flipCard() {
+        if (isAnimating) return;
+        const card = document.getElementById('flashcard');
+        if (!card.classList.contains('is-flipped')) {
+            card.classList.add('is-flipped');
+            document.getElementById('actions').classList.add('show');
+        }
+    }
+
+    function handleAnswer(remembered) {
+        if (isAnimating) return;
+        isAnimating = true;
+        
+        document.getElementById('actions').classList.remove('show');
+        
+        // Update progress based on answer
+        if (remembered) {
+            progress[currentWord.id] = { memorized: true };
+        } else {
+            progress[currentWord.id] = { hard: true };
+        }
+        saveProgress();
+        
+        // Remove from current session queue
+        reviewQueue.shift();
+        
+        const card = document.getElementById('flashcard');
+        card.classList.remove('is-flipped');
+        
+        setTimeout(() => {
+            showNextWord();
+            isAnimating = false;
+        }, 500); 
+    }
+
+    function goHome() {
+        renderLevels();
+        switchScreen('level-screen');
+        reviewQueue = [];
+        const card = document.getElementById('flashcard');
+        card.classList.remove('is-flipped');
+        document.getElementById('actions').classList.remove('show');
+    }
+
+    function switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function resetAllProgress() {
+        if(confirm('確定要清除所有學習記錄嗎？')) {
+            progress = {};
+            saveProgress();
+            renderLevels();
+        }
+    }
+
+    // Init
+    loadData();
+</script>
+</body>
+</html>
